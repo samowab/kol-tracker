@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bilibili KOL 트래커</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;700&family=Manrope:wght@500;600;700;800&family=Noto+Sans+SC:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F6F3EC;
+    --surface:#FFFFFF;
+    --surface-2:#EDE8DC;
+    --ink:#1E2422;
+    --ink-soft:#5B655F;
+    --ink-faint:#8B948D;
+    --line:rgba(30,36,34,0.13);
+    --line-strong:rgba(30,36,34,0.24);
+    --accent:#2F6F5E;
+    --accent-ink:#F3FAF7;
+    --accent-soft:#DDEAE3;
+    --gold:#9C7024;
+    --gold-soft:#F1E4C6;
+    --bili:#E14D77;
+    --bili-soft:#FBE2E9;
+    --status-none:#8B8F8A;
+    --status-none-soft:#E7E5DD;
+    --status-sent:#3B6EA8;
+    --status-sent-soft:#DCE6F1;
+    --status-reply:#9C7024;
+    --status-reply-soft:#F1E4C6;
+    --status-confirmed:#2F6F5E;
+    --status-confirmed-soft:#DDEAE3;
+    --shadow:0 1px 2px rgba(20,24,22,0.06),0 8px 24px -12px rgba(20,24,22,0.18);
+    --radius:10px;
+    --font-display:'Noto Serif SC','Noto Sans SC',serif;
+    --font-body:'Manrope','Noto Sans SC',sans-serif;
+    --font-mono:'IBM Plex Mono','Noto Sans SC',monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#131712;
+      --surface:#1A201B;
+      --surface-2:#232B23;
+      --ink:#ECE9DF;
+      --ink-soft:#A6ACA1;
+      --ink-faint:#6E756B;
+      --line:rgba(236,233,223,0.12);
+      --line-strong:rgba(236,233,223,0.22);
+      --accent:#57B499;
+      --accent-ink:#0C1512;
+      --accent-soft:rgba(87,180,153,0.16);
+      --gold:#D9AC5C;
+      --gold-soft:rgba(217,172,92,0.16);
+      --bili:#F17D9C;
+      --bili-soft:rgba(241,125,156,0.14);
+      --status-none:#96988F;
+      --status-none-soft:rgba(150,152,143,0.18);
+      --status-sent:#7CA6D6;
+      --status-sent-soft:rgba(124,166,214,0.16);
+      --status-reply:#D9AC5C;
+      --status-reply-soft:rgba(217,172,92,0.16);
+      --status-confirmed:#57B499;
+      --status-confirmed-soft:rgba(87,180,153,0.16);
+      --shadow:0 1px 2px rgba(0,0,0,0.3),0 12px 28px -14px rgba(0,0,0,0.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#131712; --surface:#1A201B; --surface-2:#232B23; --ink:#ECE9DF; --ink-soft:#A6ACA1; --ink-faint:#6E756B;
+    --line:rgba(236,233,223,0.12); --line-strong:rgba(236,233,223,0.22); --accent:#57B499; --accent-ink:#0C1512;
+    --accent-soft:rgba(87,180,153,0.16); --gold:#D9AC5C; --gold-soft:rgba(217,172,92,0.16); --bili:#F17D9C;
+    --bili-soft:rgba(241,125,156,0.14); --status-none:#96988F; --status-none-soft:rgba(150,152,143,0.18);
+    --status-sent:#7CA6D6; --status-sent-soft:rgba(124,166,214,0.16); --status-reply:#D9AC5C;
+    --status-reply-soft:rgba(217,172,92,0.16); --status-confirmed:#57B499; --status-confirmed-soft:rgba(87,180,153,0.16);
+    --shadow:0 1px 2px rgba(0,0,0,0.3),0 12px 28px -14px rgba(0,0,0,0.6);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{ background:var(--bg); }
+  body{
+    margin:0; color:var(--ink); font-family:var(--font-body);
+    font-feature-settings:"tnum" 1; -webkit-font-smoothing:antialiased;
+  }
+  ::selection{ background:var(--accent-soft); }
+
+  .wrap{ max-width:1180px; margin:0 auto; padding:28px 24px 64px; }
+
+  header.top{
+    display:flex; flex-wrap:wrap; gap:20px 32px; align-items:flex-end; justify-content:space-between;
+    padding-bottom:20px; margin-bottom:22px; border-bottom:1px solid var(--line);
+  }
+  .titleblock .eyebrow{
+    font-family:var(--font-mono); font-size:11.5px; letter-spacing:.11em; text-transform:uppercase;
+    color:var(--accent); font-weight:600; margin:0 0 8px;
+  }
+  .titleblock h1{
+    font-family:var(--font-display); font-weight:700; font-size:clamp(26px,3.4vw,34px);
+    margin:0 0 8px; text-wrap:balance; letter-spacing:-0.01em;
+  }
+  .titleblock p{ margin:0; color:var(--ink-soft); font-size:14px; max-width:60ch; line-height:1.55; }
+
+  .stats{ display:flex; gap:10px; flex-wrap:wrap; }
+  .stat{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:12px 16px; min-width:126px; box-shadow:var(--shadow);
+  }
+  .stat .n{ font-family:var(--font-mono); font-size:22px; font-weight:600; line-height:1.1; }
+  .stat .n small{ font-size:13px; color:var(--ink-faint); font-weight:500; margin-left:2px;}
+  .stat .l{ font-size:11.5px; color:var(--ink-soft); margin-top:4px; letter-spacing:.01em; }
+  .stat.accent .n{ color:var(--accent); }
+  .stat.gold .n{ color:var(--gold); }
+
+  .sync-bar{
+    display:flex; flex-wrap:wrap; gap:10px 18px; align-items:center; justify-content:space-between;
+    background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:10px 16px;
+    margin-bottom:18px; font-size:12.5px; color:var(--ink-soft);
+  }
+  .sync-left{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .sync-dot{ width:7px; height:7px; border-radius:50%; background:var(--status-none); flex:none; }
+  .sync-dot.ok{ background:var(--accent); }
+  .sync-dot.err{ background:var(--status-reply); }
+  .sync-dot.loading{ background:var(--status-sent); animation:pulse 1.2s ease infinite; }
+  @keyframes pulse{ 0%,100%{ opacity:1; } 50%{ opacity:.35; } }
+  .refresh-btn{
+    font-family:var(--font-body); font-size:12.5px; font-weight:700; border:1px solid var(--line);
+    background:var(--surface); color:var(--ink); border-radius:999px; padding:6px 14px; cursor:pointer;
+  }
+  .refresh-btn:hover{ border-color:var(--line-strong); }
+  .refresh-btn:disabled{ opacity:.5; cursor:not-allowed; }
+
+  .controls{
+    display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between;
+    margin-bottom:14px; position:sticky; top:0; background:var(--bg); padding:12px 0; z-index:5;
+  }
+  .controls-left{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .search{
+    display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--line);
+    border-radius:999px; padding:8px 14px; min-width:210px;
+  }
+  .search input{ border:none; outline:none; background:transparent; font:inherit; color:var(--ink); width:100%; font-size:13.5px; }
+  .search svg{ flex:none; opacity:.55; }
+
+  .chipgroup{ display:flex; gap:6px; flex-wrap:wrap; }
+  .chip{
+    font-family:var(--font-body); font-size:12.5px; font-weight:600; padding:7px 13px; border-radius:999px;
+    border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); cursor:pointer;
+    transition:background .15s,color .15s,border-color .15s;
+  }
+  .chip:hover{ border-color:var(--line-strong); color:var(--ink); }
+  .chip.active{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+
+  select.sortsel{
+    font-family:var(--font-body); font-size:12.5px; font-weight:600; padding:8px 12px; border-radius:999px;
+    border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer;
+  }
+
+  .tablewrap{
+    background:var(--surface); border:1px solid var(--line); border-radius:14px; overflow:auto;
+    box-shadow:var(--shadow); max-height:74vh;
+  }
+  table{ border-collapse:collapse; width:100%; min-width:920px; font-size:13.5px; }
+  thead th{
+    position:sticky; top:0; background:var(--surface); text-align:left; font-size:11px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--ink-faint); font-weight:600; padding:12px 14px; border-bottom:1px solid var(--line);
+    z-index:2;
+  }
+  tbody td{ padding:12px 14px; border-bottom:1px solid var(--line); vertical-align:top; }
+  tbody tr:hover td{ background:var(--surface-2); }
+  tbody tr:last-child td{ border-bottom:none; }
+
+  .name-cell{ display:flex; flex-direction:column; gap:3px; min-width:150px; }
+  .name-link{ font-weight:700; color:var(--ink); text-decoration:none; display:inline-flex; align-items:center; gap:6px; font-size:14px; }
+  .name-link:hover{ color:var(--accent); }
+  .name-link svg{ opacity:.45; flex:none; }
+  .badge-unverified{
+    font-size:10.5px; font-weight:700; color:var(--gold); background:var(--gold-soft); border-radius:5px;
+    padding:1px 6px; letter-spacing:.02em; width:fit-content;
+  }
+
+  .genre-pills{ display:flex; flex-direction:column; gap:4px; min-width:120px; }
+  .pill{ font-size:11px; font-weight:600; padding:2px 8px; border-radius:6px; width:fit-content; background:var(--accent-soft); color:var(--accent); }
+  .pill.secondary{ background:var(--surface-2); color:var(--ink-soft); }
+
+  .followers-cell{ min-width:140px; }
+  .followers-num{ font-family:var(--font-mono); font-weight:600; font-size:14px; }
+  .followers-num .unit{ font-size:11px; color:var(--ink-faint); font-weight:500; margin-left:2px; }
+  .followers-bar{ height:5px; border-radius:3px; background:var(--surface-2); margin-top:6px; overflow:hidden; width:100px; }
+  .followers-bar i{ display:block; height:100%; background:var(--accent); border-radius:3px; }
+  .recheck{ display:inline-block; margin-top:4px; font-size:10.5px; font-weight:700; color:var(--gold); }
+  .na{ color:var(--ink-faint); font-family:var(--font-mono); }
+
+  .channel-cell{ min-width:150px; }
+  .channel-badge{
+    display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; padding:3px 9px 3px 7px;
+    border-radius:999px; width:fit-content;
+  }
+  .channel-badge .dot{ width:6px; height:6px; border-radius:50%; flex:none; }
+  .channel-badge.wechat{ background:var(--accent-soft); color:var(--accent); }
+  .channel-badge.wechat .dot{ background:var(--accent); }
+  .channel-badge.qq{ background:var(--status-sent-soft); color:var(--status-sent); }
+  .channel-badge.qq .dot{ background:var(--status-sent); }
+  .channel-badge.email{ background:var(--gold-soft); color:var(--gold); }
+  .channel-badge.email .dot{ background:var(--gold); }
+  .channel-badge.bilibili{ background:var(--bili-soft); color:var(--bili); }
+  .channel-badge.bilibili .dot{ background:var(--bili); }
+  .channel-detail{ font-family:var(--font-mono); font-size:11px; color:var(--ink-soft); margin-top:5px; word-break:break-all; }
+
+  .status-pill{
+    display:inline-block; font-size:12px; font-weight:700; border-radius:999px; padding:5px 13px;
+  }
+  .status-pill.st-none{ background:var(--status-none-soft); color:var(--status-none); }
+  .status-pill.st-sent{ background:var(--status-sent-soft); color:var(--status-sent); }
+  .status-pill.st-reply{ background:var(--status-reply-soft); color:var(--status-reply); }
+  .status-pill.st-confirmed{ background:var(--status-confirmed-soft); color:var(--status-confirmed); }
+
+  .notes-cell{ min-width:220px; max-width:300px; cursor:pointer; }
+  .notes-text{ color:var(--ink-soft); font-size:12.5px; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .notes-cell.expanded .notes-text{ -webkit-line-clamp:unset; }
+  .notes-hint{ font-size:10.5px; color:var(--ink-faint); margin-top:3px; }
+
+  .empty-row td{ text-align:center; padding:48px 14px; color:var(--ink-faint); font-size:13.5px; }
+
+  footer.note{ margin-top:18px; font-size:11.5px; color:var(--ink-faint); line-height:1.6; }
+  footer.note a{ color:var(--ink-soft); }
+
+  @media (max-width:640px){
+    .wrap{ padding:20px 14px 48px; }
+    .stats{ width:100%; }
+    .stat{ flex:1 1 40%; min-width:0; }
+    .controls{ position:static; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="titleblock">
+      <p class="eyebrow">Chrono Odyssey · CN Market</p>
+      <h1>Bilibili KOL 트래커</h1>
+      <p>크로노 오디세이 중국 시장 아웃리치 대상 KOL 목록 · 전원 중국 지역 · 중국어 콘텐츠 · 구글 시트를 실시간으로 읽어오는 열람 전용 페이지</p>
+    </div>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <div class="sync-bar">
+    <div class="sync-left">
+      <span class="sync-dot loading" id="syncDot"></span>
+      <span id="syncText">시트에서 불러오는 중...</span>
+    </div>
+    <button class="refresh-btn" id="refreshBtn">새로고침</button>
+  </div>
+
+  <div class="controls">
+    <div class="controls-left">
+      <div class="search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input id="searchInput" type="text" placeholder="크리에이터, 장르, 메모 검색" />
+      </div>
+      <div class="chipgroup" id="statusChips"></div>
+      <div class="chipgroup" id="channelChips"></div>
+    </div>
+    <select class="sortsel" id="sortSelect">
+      <option value="followers-desc">팔로워 많은 순</option>
+      <option value="followers-asc">팔로워 적은 순</option>
+      <option value="name-asc">이름순 (가나다/A-Z)</option>
+      <option value="status">상태순</option>
+    </select>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:32px;">#</th>
+          <th>크리에이터</th>
+          <th>장르</th>
+          <th>Bilibili 팔로워</th>
+          <th>컨택 채널</th>
+          <th>상태</th>
+          <th>메모</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <footer class="note">
+    이 페이지는 <a href="https://docs.google.com/spreadsheets/d/1h-Fp2MK3XtPbbs6MXjOXFg7HxQq2EnZ3rnGUybiICik/edit" target="_blank" rel="noopener">Google Sheets 원본</a>을 열람 전용으로 실시간 표시합니다 · 상태 변경이나 신규 추가는 시트에 편집 권한이 있는 담당자가 반영하며, 이 페이지는 새로고침하면 최신 내용을 다시 불러옵니다 ·
+    "재확인" 표시된 팔로워 수는 검색 상위 결과 기준으로 동명이인 오차 가능성 있음
+  </footer>
+</div>
+
+<script>
+(function(){
+  var SHEET_ID = '1h-Fp2MK3XtPbbs6MXjOXFg7HxQq2EnZ3rnGUybiICik';
+  var GID = '634654788';
+  var STATUS_OPTS = ['미접촉','발송완료','회신','확정'];
+  var STATUS_CLASS = {'미접촉':'st-none','발송완료':'st-sent','회신':'st-reply','확정':'st-confirmed'};
+
+  var KOLS = [];
+  var state = { search:'', status:'전체', channel:'전체', sort:'followers-desc' };
+  var callbackCounter = 0;
+
+  function fetchSheetJSONP(){
+    return new Promise(function(resolve, reject){
+      var cbName = 'kolSheetCb' + (++callbackCounter);
+      var timeout = setTimeout(function(){
+        cleanup();
+        reject(new Error('timeout'));
+      }, 15000);
+      function cleanup(){
+        clearTimeout(timeout);
+        delete window[cbName];
+        if(script && script.parentNode) script.parentNode.removeChild(script);
+      }
+      window[cbName] = function(data){
+        cleanup();
+        resolve(data);
+      };
+      var script = document.createElement('script');
+      script.src = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?gid=' + GID + '&tqx=out:json;responseHandler:' + cbName;
+      script.onerror = function(){ cleanup(); reject(new Error('script load failed')); };
+      document.body.appendChild(script);
+    });
+  }
+
+  function cellVal(row, idx){
+    var c = row.c[idx];
+    return (c && c.v !== null && c.v !== undefined) ? c.v : '';
+  }
+
+  function deriveChannelType(label){
+    label = (label||'').toLowerCase();
+    if(label.indexOf('wechat') !== -1) return 'wechat';
+    if(label.indexOf('qq') !== -1) return 'qq';
+    if(label.indexOf('email') !== -1) return 'email';
+    return 'bilibili';
+  }
+
+  function parseSheetData(data){
+    var rows = data.table.rows;
+    var list = [];
+    rows.forEach(function(row, i){
+      if(!row.c) return;
+      var name = cellVal(row, 0);
+      if(!name) return;
+      var bilibili = cellVal(row, 10) || '#';
+      var followersRaw = cellVal(row, 11);
+      var followers = (typeof followersRaw === 'number') ? followersRaw : (parseInt(followersRaw, 10) || null);
+      var notes = String(cellVal(row, 19) || '');
+      var notesExtra = String(cellVal(row, 20) || '');
+      if(notesExtra) notes = notes ? (notes + ' · ' + notesExtra) : notesExtra;
+      var channelLabel = cellVal(row, 17) || 'Bilibili DM';
+      var status = cellVal(row, 18) || '미접촉';
+      if(STATUS_OPTS.indexOf(status) === -1) status = '미접촉';
+      var wechat = cellVal(row, 8);
+      var qq = cellVal(row, 9);
+      var email = cellVal(row, 7);
+      var channelType = deriveChannelType(channelLabel);
+      var channelDetail = wechat || qq || email || null;
+      list.push({
+        id: 'r' + i,
+        name: name,
+        genre: cellVal(row, 4) || 'MMO',
+        genre2: cellVal(row, 5) || '',
+        channelType: channelType,
+        channelLabel: channelLabel,
+        channelDetail: channelDetail,
+        bilibili: bilibili,
+        followers: followers,
+        linkVerified: /space\.bilibili\.com\//.test(bilibili),
+        followerVerified: notes.indexOf('재확인') === -1,
+        notes: notes,
+        status: status
+      });
+    });
+    return list;
+  }
+
+  function fmtFollowers(n){
+    if(n === null || n === undefined) return '<span class="na">미확인</span>';
+    var man = n/10000;
+    var manStr = man >= 10 ? Math.round(man)+'만' : man.toFixed(1)+'만';
+    return '<span class="followers-num">'+n.toLocaleString('en-US')+'<span class="unit"> · '+manStr+'</span></span>';
+  }
+  function channelClass(t){ return t === 'wechat' ? 'wechat' : t === 'qq' ? 'qq' : t === 'email' ? 'email' : 'bilibili'; }
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  function renderStats(){
+    var total = KOLS.length;
+    var verified = KOLS.filter(function(k){ return k.linkVerified; }).length;
+    var alt = KOLS.filter(function(k){ return k.channelType !== 'bilibili'; }).length;
+    var reach = KOLS.reduce(function(s,k){ return s + (k.followers||0); }, 0);
+    var reachMan = Math.round(reach/10000).toLocaleString('en-US');
+    document.getElementById('stats').innerHTML =
+      stat(total, '', '전체 KOL', '') +
+      stat(verified, '/'+total, 'Bilibili 링크 검증됨', 'accent') +
+      stat(alt, '/'+total, 'WeChat·QQ·Email 확보', 'accent') +
+      stat(reachMan, '만', '합산 Bilibili 팔로워', 'gold');
+  }
+  function stat(n, suffix, label, cls){
+    return '<div class="stat '+(cls||'')+'"><div class="n">'+n+'<small>'+suffix+'</small></div><div class="l">'+label+'</div></div>';
+  }
+
+  function renderChips(){
+    document.getElementById('statusChips').innerHTML = ['전체'].concat(STATUS_OPTS).map(function(s){
+      return '<button class="chip'+(state.status===s?' active':'')+'" data-status="'+s+'">'+s+'</button>';
+    }).join('');
+    var channelOpts = [{v:'전체', l:'전체 채널'},{v:'alt', l:'대체 채널 보유'},{v:'bilibili', l:'Bilibili DM만'}];
+    document.getElementById('channelChips').innerHTML = channelOpts.map(function(c){
+      return '<button class="chip'+(state.channel===c.v?' active':'')+'" data-channel="'+c.v+'">'+c.l+'</button>';
+    }).join('');
+  }
+
+  function applyFilters(){
+    var q = state.search.trim().toLowerCase();
+    var list = KOLS.filter(function(k){
+      if(state.status !== '전체' && k.status !== state.status) return false;
+      if(state.channel === 'alt' && k.channelType === 'bilibili') return false;
+      if(state.channel === 'bilibili' && k.channelType !== 'bilibili') return false;
+      if(q){
+        var hay = (k.name+' '+k.genre+' '+k.genre2+' '+k.notes).toLowerCase();
+        if(hay.indexOf(q) === -1) return false;
+      }
+      return true;
+    });
+    list.sort(function(a,b){
+      switch(state.sort){
+        case 'followers-asc': return (a.followers||-1) - (b.followers||-1);
+        case 'name-asc': return a.name.localeCompare(b.name,'zh');
+        case 'status': return STATUS_OPTS.indexOf(a.status) - STATUS_OPTS.indexOf(b.status);
+        default: return (b.followers||-1) - (a.followers||-1);
+      }
+    });
+    return list;
+  }
+
+  function renderTable(){
+    var list = applyFilters();
+    var maxFollowers = Math.max.apply(null, KOLS.map(function(k){ return k.followers||0; })) || 1;
+    var tbody = document.getElementById('tbody');
+    if(list.length === 0){
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="7">조건에 맞는 KOL이 없습니다.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = list.map(function(k, i){
+      var barPct = k.followers ? Math.max(4, Math.round((k.followers/maxFollowers)*100)) : 0;
+      var unverifiedBadge = !k.linkVerified ? '<span class="badge-unverified">계정 미검증</span>' : '';
+      var recheckFlag = (k.followerVerified === false) ? '<div class="recheck">팔로워 재확인 권장</div>' : '';
+      var channelDetail = k.channelDetail ? '<div class="channel-detail">'+escapeHtml(k.channelDetail)+'</div>' : '';
+      return '' +
+      '<tr>' +
+        '<td>'+(i+1)+'</td>' +
+        '<td><div class="name-cell">' +
+          '<a class="name-link" href="'+k.bilibili+'" target="_blank" rel="noopener">'+escapeHtml(k.name)+
+            '<svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M7 17L17 7M17 7H9M17 7V15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>' +
+          unverifiedBadge +
+        '</div></td>' +
+        '<td><div class="genre-pills"><span class="pill">'+escapeHtml(k.genre)+'</span><span class="pill secondary">'+escapeHtml(k.genre2)+'</span></div></td>' +
+        '<td class="followers-cell">'+fmtFollowers(k.followers)+'<div class="followers-bar"><i style="width:'+barPct+'%"></i></div>'+recheckFlag+'</td>' +
+        '<td class="channel-cell"><span class="channel-badge '+channelClass(k.channelType)+'"><span class="dot"></span>'+escapeHtml(k.channelLabel)+'</span>'+channelDetail+'</td>' +
+        '<td><span class="status-pill '+STATUS_CLASS[k.status]+'">'+escapeHtml(k.status)+'</span></td>' +
+        '<td class="notes-cell"><div class="notes-text">'+escapeHtml(k.notes)+'</div><div class="notes-hint">클릭하여 전체 보기</div></td>' +
+      '</tr>';
+    }).join('');
+    Array.prototype.forEach.call(tbody.querySelectorAll('.notes-cell'), function(cell){
+      cell.addEventListener('click', function(){ cell.classList.toggle('expanded'); });
+    });
+  }
+
+  function setSyncState(kind, text){
+    var dot = document.getElementById('syncDot');
+    dot.className = 'sync-dot ' + kind;
+    document.getElementById('syncText').textContent = text;
+  }
+
+  function fmtNow(){
+    return new Date().toLocaleString('ko-KR', {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'});
+  }
+
+  function load(){
+    setSyncState('loading', '시트에서 불러오는 중...');
+    document.getElementById('refreshBtn').disabled = true;
+    fetchSheetJSONP().then(function(data){
+      KOLS = parseSheetData(data);
+      renderStats(); renderChips(); renderTable();
+      setSyncState('ok', KOLS.length+'명 불러옴 · '+fmtNow()+' 기준');
+    }).catch(function(){
+      setSyncState('err', '시트를 불러오지 못했습니다 — 네트워크 확인 후 새로고침 해주세요');
+    }).finally(function(){
+      document.getElementById('refreshBtn').disabled = false;
+    });
+  }
+
+  function wireControls(){
+    document.getElementById('searchInput').addEventListener('input', function(e){ state.search = e.target.value; renderTable(); });
+    document.getElementById('sortSelect').addEventListener('change', function(e){ state.sort = e.target.value; renderTable(); });
+    document.getElementById('statusChips').addEventListener('click', function(e){
+      var btn = e.target.closest('.chip'); if(!btn) return;
+      state.status = btn.getAttribute('data-status'); renderChips(); renderTable();
+    });
+    document.getElementById('channelChips').addEventListener('click', function(e){
+      var btn = e.target.closest('.chip'); if(!btn) return;
+      state.channel = btn.getAttribute('data-channel'); renderChips(); renderTable();
+    });
+    document.getElementById('refreshBtn').addEventListener('click', load);
+  }
+
+  wireControls();
+  renderChips();
+  load();
+})();
+</script>
+</body>
+</html>
