@@ -1,0 +1,607 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>NA/EU KOL 트래커</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F6F3EC;
+    --surface:#FFFFFF;
+    --surface-2:#EDE8DC;
+    --ink:#1E2422;
+    --ink-soft:#5B655F;
+    --ink-faint:#8B948D;
+    --line:rgba(30,36,34,0.13);
+    --line-strong:rgba(30,36,34,0.24);
+    --accent:#2F6F5E;
+    --accent-ink:#F3FAF7;
+    --accent-soft:#DDEAE3;
+    --gold:#9C7024;
+    --gold-soft:#F1E4C6;
+    --yt:#C4302B;
+    --yt-soft:#FBE1DF;
+    --tw:#6F4FCC;
+    --tw-soft:#EAE3FA;
+    --xx:#1E2422;
+    --xx-soft:#E7E5DD;
+    --status-none:#8B8F8A;
+    --status-none-soft:#E7E5DD;
+    --status-sent:#3B6EA8;
+    --status-sent-soft:#DCE6F1;
+    --status-reply:#9C7024;
+    --status-reply-soft:#F1E4C6;
+    --status-confirmed:#2F6F5E;
+    --status-confirmed-soft:#DDEAE3;
+    --shadow:0 1px 2px rgba(20,24,22,0.06),0 8px 24px -12px rgba(20,24,22,0.18);
+    --radius:10px;
+    --font-display:'Manrope',sans-serif;
+    --font-body:'Manrope',sans-serif;
+    --font-mono:'IBM Plex Mono',monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#131712;
+      --surface:#1A201B;
+      --surface-2:#232B23;
+      --ink:#ECE9DF;
+      --ink-soft:#A6ACA1;
+      --ink-faint:#6E756B;
+      --line:rgba(236,233,223,0.12);
+      --line-strong:rgba(236,233,223,0.22);
+      --accent:#57B499;
+      --accent-ink:#0C1512;
+      --accent-soft:rgba(87,180,153,0.16);
+      --gold:#D9AC5C;
+      --gold-soft:rgba(217,172,92,0.16);
+      --yt:#FF6B66;
+      --yt-soft:rgba(255,107,102,0.16);
+      --tw:#B29CF2;
+      --tw-soft:rgba(178,156,242,0.16);
+      --xx:#ECE9DF;
+      --xx-soft:rgba(236,233,223,0.14);
+      --status-none:#96988F;
+      --status-none-soft:rgba(150,152,143,0.18);
+      --status-sent:#7CA6D6;
+      --status-sent-soft:rgba(124,166,214,0.16);
+      --status-reply:#D9AC5C;
+      --status-reply-soft:rgba(217,172,92,0.16);
+      --status-confirmed:#57B499;
+      --status-confirmed-soft:rgba(87,180,153,0.16);
+      --shadow:0 1px 2px rgba(0,0,0,0.3),0 12px 28px -14px rgba(0,0,0,0.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#131712; --surface:#1A201B; --surface-2:#232B23; --ink:#ECE9DF; --ink-soft:#A6ACA1; --ink-faint:#6E756B;
+    --line:rgba(236,233,223,0.12); --line-strong:rgba(236,233,223,0.22); --accent:#57B499; --accent-ink:#0C1512;
+    --accent-soft:rgba(87,180,153,0.16); --gold:#D9AC5C; --gold-soft:rgba(217,172,92,0.16);
+    --yt:#FF6B66; --yt-soft:rgba(255,107,102,0.16); --tw:#B29CF2; --tw-soft:rgba(178,156,242,0.16);
+    --xx:#ECE9DF; --xx-soft:rgba(236,233,223,0.14);
+    --status-none:#96988F; --status-none-soft:rgba(150,152,143,0.18);
+    --status-sent:#7CA6D6; --status-sent-soft:rgba(124,166,214,0.16); --status-reply:#D9AC5C;
+    --status-reply-soft:rgba(217,172,92,0.16); --status-confirmed:#57B499; --status-confirmed-soft:rgba(87,180,153,0.16);
+    --shadow:0 1px 2px rgba(0,0,0,0.3),0 12px 28px -14px rgba(0,0,0,0.6);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{ background:var(--bg); }
+  body{
+    margin:0; color:var(--ink); font-family:var(--font-body);
+    font-feature-settings:"tnum" 1; -webkit-font-smoothing:antialiased;
+  }
+  ::selection{ background:var(--accent-soft); }
+
+  .wrap{ max-width:1280px; margin:0 auto; padding:28px 24px 64px; }
+
+  header.top{
+    display:flex; flex-wrap:wrap; gap:20px 32px; align-items:flex-end; justify-content:space-between;
+    padding-bottom:20px; margin-bottom:22px; border-bottom:1px solid var(--line);
+  }
+  .titleblock .eyebrow{
+    font-family:var(--font-mono); font-size:11.5px; letter-spacing:.11em; text-transform:uppercase;
+    color:var(--accent); font-weight:600; margin:0 0 8px;
+  }
+  .titleblock h1{
+    font-family:var(--font-display); font-weight:800; font-size:clamp(24px,3.2vw,32px);
+    margin:0 0 8px; text-wrap:balance; letter-spacing:-0.01em;
+  }
+  .titleblock p{ margin:0; color:var(--ink-soft); font-size:14px; max-width:64ch; line-height:1.55; }
+
+  .stats{ display:flex; gap:10px; flex-wrap:wrap; }
+  .stat{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:12px 16px; min-width:118px; box-shadow:var(--shadow);
+  }
+  .stat .n{ font-family:var(--font-mono); font-size:22px; font-weight:600; line-height:1.1; }
+  .stat .n small{ font-size:13px; color:var(--ink-faint); font-weight:500; margin-left:2px;}
+  .stat .l{ font-size:11.5px; color:var(--ink-soft); margin-top:4px; letter-spacing:.01em; }
+  .stat.accent .n{ color:var(--accent); }
+  .stat.gold .n{ color:var(--gold); }
+
+  .sync-bar{
+    display:flex; flex-wrap:wrap; gap:10px 18px; align-items:center; justify-content:space-between;
+    background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:10px 16px;
+    margin-bottom:18px; font-size:12.5px; color:var(--ink-soft);
+  }
+  .sync-left{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .sync-dot{ width:7px; height:7px; border-radius:50%; background:var(--status-none); flex:none; }
+  .sync-dot.ok{ background:var(--accent); }
+  .sync-dot.err{ background:var(--status-reply); }
+  .sync-dot.loading{ background:var(--status-sent); animation:pulse 1.2s ease infinite; }
+  @keyframes pulse{ 0%,100%{ opacity:1; } 50%{ opacity:.35; } }
+  .refresh-btn{
+    font-family:var(--font-body); font-size:12.5px; font-weight:700; border:1px solid var(--line);
+    background:var(--surface); color:var(--ink); border-radius:999px; padding:6px 14px; cursor:pointer;
+  }
+  .refresh-btn:hover{ border-color:var(--line-strong); }
+  .refresh-btn:disabled{ opacity:.5; cursor:not-allowed; }
+
+  .controls{
+    display:flex; flex-wrap:wrap; gap:10px; align-items:flex-start; justify-content:space-between;
+    margin-bottom:14px; position:sticky; top:0; background:var(--bg); padding:12px 0; z-index:5;
+  }
+  .controls-left{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .filter-rows{ display:flex; flex-direction:column; gap:8px; }
+  .filter-row{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .filter-row .flabel{ font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.05em; margin-right:2px; min-width:64px; }
+  .search{
+    display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--line);
+    border-radius:999px; padding:8px 14px; min-width:220px;
+  }
+  .search input{ border:none; outline:none; background:transparent; font:inherit; color:var(--ink); width:100%; font-size:13.5px; }
+  .search svg{ flex:none; opacity:.55; }
+
+  .chipgroup{ display:flex; gap:6px; flex-wrap:wrap; }
+  .chip{
+    font-family:var(--font-body); font-size:12.5px; font-weight:600; padding:6px 12px; border-radius:999px;
+    border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); cursor:pointer;
+    transition:background .15s,color .15s,border-color .15s; white-space:nowrap;
+  }
+  .chip:hover{ border-color:var(--line-strong); color:var(--ink); }
+  .chip.active{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+
+  select.sortsel{
+    font-family:var(--font-body); font-size:12.5px; font-weight:600; padding:8px 12px; border-radius:999px;
+    border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer;
+  }
+
+  .tablewrap{
+    background:var(--surface); border:1px solid var(--line); border-radius:14px; overflow:auto;
+    box-shadow:var(--shadow); max-height:74vh;
+  }
+  table{ border-collapse:collapse; width:100%; min-width:1080px; font-size:13.5px; }
+  thead th{
+    position:sticky; top:0; background:var(--surface); text-align:left; font-size:11px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--ink-faint); font-weight:600; padding:12px 14px; border-bottom:1px solid var(--line);
+    z-index:2;
+  }
+  tbody td{ padding:12px 14px; border-bottom:1px solid var(--line); vertical-align:top; }
+  tbody tr:hover td{ background:var(--surface-2); }
+  tbody tr:last-child td{ border-bottom:none; }
+
+  .name-cell{ display:flex; flex-direction:column; gap:3px; min-width:150px; }
+  .name-main{ font-weight:700; color:var(--ink); font-size:14px; }
+  .name-real{ font-size:11px; color:var(--ink-faint); }
+  .name-region{ font-size:10.5px; color:var(--ink-soft); font-family:var(--font-mono); margin-top:1px; }
+  .badge-row{ display:flex; gap:4px; flex-wrap:wrap; margin-top:3px; }
+  .badge-vip{
+    font-size:10px; font-weight:700; color:var(--gold); background:var(--gold-soft); border-radius:5px;
+    padding:1px 6px; letter-spacing:.02em; width:fit-content;
+  }
+  .badge-weak{
+    font-size:10px; font-weight:700; color:var(--ink-faint); background:var(--surface-2); border-radius:5px;
+    padding:1px 6px; letter-spacing:.02em; width:fit-content; border:1px solid var(--line);
+  }
+
+  .genre-pills{ display:flex; flex-direction:column; gap:4px; min-width:130px; }
+  .pill{ font-size:11px; font-weight:600; padding:2px 8px; border-radius:6px; width:fit-content; background:var(--accent-soft); color:var(--accent); }
+  .pill.secondary{ background:var(--surface-2); color:var(--ink-soft); }
+
+  .platform-cell{ min-width:96px; }
+  .platform-links{ display:flex; gap:6px; flex-wrap:wrap; }
+  .plink{
+    display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px;
+    text-decoration:none; font-size:11px; font-weight:800; flex:none;
+  }
+  .plink.yt{ background:var(--yt-soft); color:var(--yt); }
+  .plink.tw{ background:var(--tw-soft); color:var(--tw); }
+  .plink.xx{ background:var(--xx-soft); color:var(--xx); }
+  .plink.disabled{ opacity:.3; pointer-events:none; }
+
+  .followers-cell{ min-width:150px; }
+  .followers-num{ font-family:var(--font-mono); font-weight:600; font-size:13px; }
+  .followers-bar{ height:5px; border-radius:3px; background:var(--surface-2); margin-top:6px; overflow:hidden; width:110px; }
+  .followers-bar i{ display:block; height:100%; background:var(--accent); border-radius:3px; }
+  .na{ color:var(--ink-faint); font-family:var(--font-mono); }
+
+  .contact-cell{ min-width:170px; }
+  .contact-email{ font-family:var(--font-mono); font-size:11.5px; color:var(--ink-soft); text-decoration:none; word-break:break-all; }
+  .contact-email:hover{ color:var(--accent); }
+  .contact-channel{ font-size:11px; color:var(--ink-faint); margin-top:4px; }
+  .contact-discord{ font-size:11px; color:var(--tw); margin-top:2px; }
+
+  .status-pill{
+    display:inline-block; font-size:12px; font-weight:700; border-radius:999px; padding:5px 13px;
+  }
+  .status-pill.st-none{ background:var(--status-none-soft); color:var(--status-none); }
+  .status-pill.st-sent{ background:var(--status-sent-soft); color:var(--status-sent); }
+  .status-pill.st-reply{ background:var(--status-reply-soft); color:var(--status-reply); }
+  .status-pill.st-confirmed{ background:var(--status-confirmed-soft); color:var(--status-confirmed); }
+
+  .notes-cell{ min-width:220px; max-width:320px; cursor:pointer; }
+  .notes-text{ color:var(--ink-soft); font-size:12.5px; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .notes-cell.expanded .notes-text{ -webkit-line-clamp:unset; }
+  .notes-hint{ font-size:10.5px; color:var(--ink-faint); margin-top:3px; }
+
+  .empty-row td{ text-align:center; padding:48px 14px; color:var(--ink-faint); font-size:13.5px; }
+
+  footer.note{ margin-top:18px; font-size:11.5px; color:var(--ink-faint); line-height:1.6; }
+  footer.note a{ color:var(--ink-soft); }
+
+  @media (max-width:640px){
+    .wrap{ padding:20px 14px 48px; }
+    .stats{ width:100%; }
+    .stat{ flex:1 1 40%; min-width:0; }
+    .controls{ position:static; }
+    .filter-row .flabel{ min-width:0; width:100%; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="titleblock">
+      <p class="eyebrow">Chrono Odyssey · NA/EU Market</p>
+      <h1>NA/EU KOL 트래커</h1>
+      <p>크로노 오디세이 북미·유럽 시장 아웃리치 대상 크리에이터 목록 · YouTube/Twitch 오픈월드 논타겟팅 MMORPG 크리에이터 + 내부 VIP 리스트 병합 · 구글 시트를 실시간으로 읽어오는 열람 전용 페이지</p>
+    </div>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <div class="sync-bar">
+    <div class="sync-left">
+      <span class="sync-dot loading" id="syncDot"></span>
+      <span id="syncText">시트에서 불러오는 중...</span>
+    </div>
+    <button class="refresh-btn" id="refreshBtn">새로고침</button>
+  </div>
+
+  <div class="controls">
+    <div class="filter-rows">
+      <div class="filter-row">
+        <div class="search">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <input id="searchInput" type="text" placeholder="크리에이터, 장르, 메모 검색" />
+        </div>
+        <select class="sortsel" id="sortSelect">
+          <option value="followers-desc">구독/팔로워 많은 순</option>
+          <option value="followers-asc">구독/팔로워 적은 순</option>
+          <option value="name-asc">이름순 (A-Z)</option>
+          <option value="status">컨택 상태순</option>
+        </select>
+      </div>
+      <div class="filter-row">
+        <span class="flabel">출처</span>
+        <div class="chipgroup" id="sourceChips"></div>
+      </div>
+      <div class="filter-row">
+        <span class="flabel">지역</span>
+        <div class="chipgroup" id="regionChips"></div>
+      </div>
+      <div class="filter-row">
+        <span class="flabel">플랫폼</span>
+        <div class="chipgroup" id="platformChips"></div>
+      </div>
+      <div class="filter-row">
+        <span class="flabel">컨택 상태</span>
+        <div class="chipgroup" id="statusChips"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:32px;">#</th>
+          <th>크리에이터</th>
+          <th>장르</th>
+          <th>플랫폼</th>
+          <th>구독/팔로워</th>
+          <th>컨택 정보</th>
+          <th>상태</th>
+          <th>메모</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <footer class="note">
+    이 페이지는 <a href="https://docs.google.com/spreadsheets/d/1CqEXydsVbst-_pWQKzcFchsnF0XwfDSL8_vKbM5xc00/edit" target="_blank" rel="noopener">Google Sheets 원본</a>을 열람 전용으로 실시간 표시합니다 · 상태 변경이나 신규 추가는 시트에 편집 권한이 있는 담당자가 반영하며, 이 페이지는 새로고침하면 최신 내용을 다시 불러옵니다 ·
+    "VIP 리스트" 출처는 내부에서 사전에 구축한 인플루언서 킷 리스트에서 병합된 인원이며, 장르 fit이 약한 대형 버라이어티 채널이 포함될 수 있습니다 · "지역 확인 필요"는 언어권만 확인되고 정확한 거주 국가가 미확인인 경우입니다 ·
+    Bilibili(중국) 트래커는 <a href="../">여기</a>서 볼 수 있습니다.
+  </footer>
+</div>
+
+<script>
+(function(){
+  var SHEET_ID = '1CqEXydsVbst-_pWQKzcFchsnF0XwfDSL8_vKbM5xc00';
+  var GID = '1986878304';
+  var STATUS_OPTS = ['미접촉','발송완료','회신','확정'];
+  var STATUS_CLASS = {'미접촉':'st-none','발송완료':'st-sent','회신':'st-reply','확정':'st-confirmed'};
+
+  var KOLS = [];
+  var state = { search:'', status:'전체', region:'전체', platform:'전체', source:'전체', sort:'followers-desc' };
+  var callbackCounter = 0;
+
+  function fetchSheetJSONP(){
+    return new Promise(function(resolve, reject){
+      var cbName = 'kolSheetCb' + (++callbackCounter);
+      var timeout = setTimeout(function(){
+        cleanup();
+        reject(new Error('timeout'));
+      }, 15000);
+      function cleanup(){
+        clearTimeout(timeout);
+        delete window[cbName];
+        if(script && script.parentNode) script.parentNode.removeChild(script);
+      }
+      window[cbName] = function(data){
+        cleanup();
+        resolve(data);
+      };
+      var script = document.createElement('script');
+      script.src = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?gid=' + GID + '&tqx=out:json;responseHandler:' + cbName;
+      script.onerror = function(){ cleanup(); reject(new Error('script load failed')); };
+      document.body.appendChild(script);
+    });
+  }
+
+  function cellVal(row, idx){
+    var c = row.c[idx];
+    return (c && c.v !== null && c.v !== undefined) ? c.v : '';
+  }
+
+  function regionGroup(region){
+    region = region || '';
+    if(region.indexOf('확인 필요') !== -1 || region.indexOf('미확인') !== -1) return 'unknown';
+    if(region.indexOf('NA') === 0 || region.indexOf('NA ') !== -1) return 'na';
+    if(region.indexOf('EU') === 0 || region.indexOf('EU ') !== -1) return 'eu';
+    return 'other';
+  }
+
+  function maxNumber(s){
+    if(!s) return null;
+    var matches = String(s).match(/[\d,]+/g);
+    if(!matches) return null;
+    var nums = matches.map(function(m){ return parseInt(m.replace(/,/g,''),10); }).filter(function(n){ return !isNaN(n); });
+    if(!nums.length) return null;
+    return Math.max.apply(null, nums);
+  }
+
+  function parseSheetData(data){
+    var rows = data.table.rows;
+    var list = [];
+    rows.forEach(function(row, i){
+      if(!row.c) return;
+      var name = cellVal(row, 0);
+      if(!name || name === 'Creator Name') return;
+      var real = cellVal(row, 1);
+      var pgenre = cellVal(row, 4) || '-';
+      var sgenre = cellVal(row, 5) || '';
+      var region = cellVal(row, 6) || '미확인';
+      var platform = cellVal(row, 7) || '';
+      var yt = cellVal(row, 8);
+      var tw = cellVal(row, 9);
+      var xx = cellVal(row, 10);
+      var subsRaw = cellVal(row, 11);
+      var email = cellVal(row, 12) || '';
+      var discord = cellVal(row, 13);
+      var lang = cellVal(row, 14);
+      var contactChannel = cellVal(row, 15);
+      var status = cellVal(row, 16) || '미접촉';
+      if(STATUS_OPTS.indexOf(status) === -1) status = '미접촉';
+      var notes = String(cellVal(row, 17) || '');
+      var isVip = notes.indexOf('[내부 VIP 리스트 출처]') !== -1;
+      var isWeak = notes.indexOf('장르 fit 약함') !== -1;
+      list.push({
+        id: 'r' + i,
+        name: name,
+        real: real,
+        pgenre: pgenre,
+        sgenre: sgenre,
+        region: region,
+        regionGroup: regionGroup(region),
+        platform: platform,
+        yt: yt, tw: tw, xx: xx,
+        subs: subsRaw,
+        subsMax: maxNumber(subsRaw),
+        email: email,
+        emailValid: /@/.test(email),
+        discord: discord,
+        lang: lang,
+        contactChannel: contactChannel,
+        notes: notes,
+        isVip: isVip,
+        isWeak: isWeak,
+        status: status
+      });
+    });
+    return list;
+  }
+
+  function fmtFollowers(k){
+    if(!k.subs || k.subs === '미확인') return '<span class="na">미확인</span>';
+    return '<span class="followers-num">'+escapeHtml(String(k.subs))+'</span>';
+  }
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  function renderStats(){
+    var total = KOLS.length;
+    var vip = KOLS.filter(function(k){ return k.isVip; }).length;
+    var researched = total - vip;
+    var withEmail = KOLS.filter(function(k){ return k.emailValid; }).length;
+    var naCount = KOLS.filter(function(k){ return k.regionGroup === 'na'; }).length;
+    var euCount = KOLS.filter(function(k){ return k.regionGroup === 'eu'; }).length;
+    document.getElementById('stats').innerHTML =
+      stat(total, '', '전체 크리에이터', '') +
+      stat(researched, '/'+total, '리서치 검증', 'accent') +
+      stat(withEmail, '/'+total, '이메일 확보', 'accent') +
+      stat(naCount+'/'+euCount, '', 'NA / EU', 'gold');
+  }
+  function stat(n, suffix, label, cls){
+    return '<div class="stat '+(cls||'')+'"><div class="n">'+n+'<small>'+suffix+'</small></div><div class="l">'+label+'</div></div>';
+  }
+
+  function renderChips(){
+    document.getElementById('statusChips').innerHTML = ['전체'].concat(STATUS_OPTS).map(function(s){
+      return '<button class="chip'+(state.status===s?' active':'')+'" data-status="'+s+'">'+s+'</button>';
+    }).join('');
+    var sourceOpts = [{v:'전체', l:'전체'},{v:'researched', l:'리서치 검증'},{v:'vip', l:'VIP 리스트 출처'}];
+    document.getElementById('sourceChips').innerHTML = sourceOpts.map(function(c){
+      return '<button class="chip'+(state.source===c.v?' active':'')+'" data-source="'+c.v+'">'+c.l+'</button>';
+    }).join('');
+    var regionOpts = [{v:'전체', l:'전체'},{v:'na', l:'NA'},{v:'eu', l:'EU'},{v:'unknown', l:'확인 필요'},{v:'other', l:'기타'}];
+    document.getElementById('regionChips').innerHTML = regionOpts.map(function(c){
+      return '<button class="chip'+(state.region===c.v?' active':'')+'" data-region="'+c.v+'">'+c.l+'</button>';
+    }).join('');
+    var platformOpts = [{v:'전체', l:'전체'},{v:'yt', l:'YouTube 보유'},{v:'tw', l:'Twitch 보유'},{v:'both', l:'YouTube+Twitch'}];
+    document.getElementById('platformChips').innerHTML = platformOpts.map(function(c){
+      return '<button class="chip'+(state.platform===c.v?' active':'')+'" data-platform="'+c.v+'">'+c.l+'</button>';
+    }).join('');
+  }
+
+  function applyFilters(){
+    var q = state.search.trim().toLowerCase();
+    var list = KOLS.filter(function(k){
+      if(state.status !== '전체' && k.status !== state.status) return false;
+      if(state.region !== '전체' && k.regionGroup !== state.region) return false;
+      if(state.source === 'vip' && !k.isVip) return false;
+      if(state.source === 'researched' && k.isVip) return false;
+      if(state.platform === 'yt' && !k.yt) return false;
+      if(state.platform === 'tw' && !k.tw) return false;
+      if(state.platform === 'both' && !(k.yt && k.tw)) return false;
+      if(q){
+        var hay = (k.name+' '+k.real+' '+k.pgenre+' '+k.sgenre+' '+k.notes).toLowerCase();
+        if(hay.indexOf(q) === -1) return false;
+      }
+      return true;
+    });
+    list.sort(function(a,b){
+      switch(state.sort){
+        case 'followers-asc': return (a.subsMax||-1) - (b.subsMax||-1);
+        case 'name-asc': return a.name.localeCompare(b.name);
+        case 'status': return STATUS_OPTS.indexOf(a.status) - STATUS_OPTS.indexOf(b.status);
+        default: return (b.subsMax||-1) - (a.subsMax||-1);
+      }
+    });
+    return list;
+  }
+
+  function platformLink(cls, label, url){
+    if(!url) return '<span class="plink '+cls+' disabled">'+label+'</span>';
+    return '<a class="plink '+cls+'" href="'+escapeHtml(url)+'" target="_blank" rel="noopener" title="'+label+'">'+label+'</a>';
+  }
+
+  function renderTable(){
+    var list = applyFilters();
+    var maxSubs = Math.max.apply(null, KOLS.map(function(k){ return k.subsMax||0; })) || 1;
+    var tbody = document.getElementById('tbody');
+    if(list.length === 0){
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="8">조건에 맞는 크리에이터가 없습니다.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = list.map(function(k, i){
+      var barPct = k.subsMax ? Math.max(4, Math.round((k.subsMax/maxSubs)*100)) : 0;
+      var badges = '';
+      if(k.isVip) badges += '<span class="badge-vip">VIP 리스트</span>';
+      if(k.isWeak) badges += '<span class="badge-weak">장르fit 약함</span>';
+      var realRow = k.real ? '<div class="name-real">'+escapeHtml(k.real)+'</div>' : '';
+      var platforms = platformLink('yt','YT',k.yt) + platformLink('tw','TW',k.tw) + platformLink('xx','X',k.xx);
+      var emailCell = k.emailValid ? '<a class="contact-email" href="mailto:'+escapeHtml(k.email)+'">'+escapeHtml(k.email)+'</a>' : '<span class="na">'+escapeHtml(k.email||'미확인')+'</span>';
+      var channelLine = k.contactChannel ? '<div class="contact-channel">'+escapeHtml(k.contactChannel)+'</div>' : '';
+      var discordLine = k.discord ? '<div class="contact-discord">Discord ↗</div>' : '';
+      return '' +
+      '<tr>' +
+        '<td>'+(i+1)+'</td>' +
+        '<td><div class="name-cell">' +
+          '<div class="name-main">'+escapeHtml(k.name)+'</div>' +
+          realRow +
+          '<div class="name-region">'+escapeHtml(k.region)+'</div>' +
+          '<div class="badge-row">'+badges+'</div>' +
+        '</div></td>' +
+        '<td><div class="genre-pills"><span class="pill">'+escapeHtml(k.pgenre)+'</span>'+(k.sgenre?'<span class="pill secondary">'+escapeHtml(k.sgenre)+'</span>':'')+'</div></td>' +
+        '<td class="platform-cell"><div class="platform-links">'+platforms+'</div></td>' +
+        '<td class="followers-cell">'+fmtFollowers(k)+'<div class="followers-bar"><i style="width:'+barPct+'%"></i></div></td>' +
+        '<td class="contact-cell">'+emailCell+channelLine+discordLine+'</td>' +
+        '<td><span class="status-pill '+STATUS_CLASS[k.status]+'">'+escapeHtml(k.status)+'</span></td>' +
+        '<td class="notes-cell"><div class="notes-text">'+escapeHtml(k.notes)+'</div><div class="notes-hint">클릭하여 전체 보기</div></td>' +
+      '</tr>';
+    }).join('');
+    Array.prototype.forEach.call(tbody.querySelectorAll('.notes-cell'), function(cell){
+      cell.addEventListener('click', function(){ cell.classList.toggle('expanded'); });
+    });
+  }
+
+  function setSyncState(kind, text){
+    var dot = document.getElementById('syncDot');
+    dot.className = 'sync-dot ' + kind;
+    document.getElementById('syncText').textContent = text;
+  }
+
+  function fmtNow(){
+    return new Date().toLocaleString('ko-KR', {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'});
+  }
+
+  function load(){
+    setSyncState('loading', '시트에서 불러오는 중...');
+    document.getElementById('refreshBtn').disabled = true;
+    fetchSheetJSONP().then(function(data){
+      KOLS = parseSheetData(data);
+      renderStats(); renderChips(); renderTable();
+      setSyncState('ok', KOLS.length+'명 불러옴 · '+fmtNow()+' 기준');
+    }).catch(function(){
+      setSyncState('err', '시트를 불러오지 못했습니다 — 네트워크 확인 후 새로고침 해주세요');
+    }).finally(function(){
+      document.getElementById('refreshBtn').disabled = false;
+    });
+  }
+
+  function wireControls(){
+    document.getElementById('searchInput').addEventListener('input', function(e){ state.search = e.target.value; renderTable(); });
+    document.getElementById('sortSelect').addEventListener('change', function(e){ state.sort = e.target.value; renderTable(); });
+    document.getElementById('statusChips').addEventListener('click', function(e){
+      var btn = e.target.closest('.chip'); if(!btn) return;
+      state.status = btn.getAttribute('data-status'); renderChips(); renderTable();
+    });
+    document.getElementById('sourceChips').addEventListener('click', function(e){
+      var btn = e.target.closest('.chip'); if(!btn) return;
+      state.source = btn.getAttribute('data-source'); renderChips(); renderTable();
+    });
+    document.getElementById('regionChips').addEventListener('click', function(e){
+      var btn = e.target.closest('.chip'); if(!btn) return;
+      state.region = btn.getAttribute('data-region'); renderChips(); renderTable();
+    });
+    document.getElementById('platformChips').addEventListener('click', function(e){
+      var btn = e.target.closest('.chip'); if(!btn) return;
+      state.platform = btn.getAttribute('data-platform'); renderChips(); renderTable();
+    });
+    document.getElementById('refreshBtn').addEventListener('click', load);
+  }
+
+  wireControls();
+  renderChips();
+  load();
+})();
+</script>
+</body>
+</html>
