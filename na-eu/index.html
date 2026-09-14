@@ -196,6 +196,12 @@
     padding:7px 14px; font-size:11px; font-weight:700; color:var(--ink-faint); background:var(--surface-2);
     text-transform:uppercase; letter-spacing:.05em; border-bottom:1px solid var(--line);
   }
+  tr.load-more-row td{ padding:14px; text-align:center; border-bottom:none; }
+  #loadMoreBtn{
+    font-family:var(--font-body); font-size:12.5px; font-weight:700; border:1px solid var(--line);
+    background:var(--surface); color:var(--ink); border-radius:999px; padding:8px 18px; cursor:pointer;
+  }
+  #loadMoreBtn:hover{ border-color:var(--accent); color:var(--accent); }
 
   .select-cell{ display:flex; align-items:center; gap:6px; cursor:pointer; }
   .select-cell input{ cursor:pointer; width:14px; height:14px; flex:none; accent-color:var(--accent); }
@@ -390,8 +396,10 @@
   var STATUS_OPTS = ['미접촉','접촉중','회신옴','진행중'];
   var STATUS_CLASS = {'미접촉':'st-none','접촉중':'st-sent','회신옴':'st-reply','진행중':'st-confirmed'};
 
+  var PAGE_SIZE = 200;
   var KOLS = [];
-  var state = { search:'', status:[], region:[], platform:[], source:[], sort:'followers-desc', selected:new Set() };
+  var maxSubsCache = 1;
+  var state = { search:'', status:[], region:[], platform:[], source:[], sort:'followers-desc', selected:new Set(), visibleCount:PAGE_SIZE };
   var callbackCounter = 0;
 
   function toggleMulti(arr, v){
@@ -639,21 +647,28 @@
     var pinned = sortList(KOLS.filter(function(k){ return state.selected.has(k.id); }));
     var rest = filtered.filter(function(k){ return !state.selected.has(k.id); });
 
-    var maxSubs = Math.max.apply(null, KOLS.map(function(k){ return k.subsMax||0; })) || 1;
+    var maxSubs = maxSubsCache || 1;
     var tbody = document.getElementById('tbody');
     if(pinned.length === 0 && rest.length === 0){
       tbody.innerHTML = '<tr class="empty-row"><td colspan="8">조건에 맞는 크리에이터가 없습니다.</td></tr>';
       return;
     }
+    var visibleRest = rest.slice(0, state.visibleCount);
+    var hasMore = rest.length > visibleRest.length;
     var html = pinned.map(function(k, i){ return rowHtml(k, i+1, true, maxSubs); }).join('');
     if(pinned.length && rest.length){
       html += '<tr class="section-divider"><td colspan="8">필터 결과 ('+rest.length+'명)</td></tr>';
     }
-    html += rest.map(function(k, i){ return rowHtml(k, pinned.length+i+1, false, maxSubs); }).join('');
+    html += visibleRest.map(function(k, i){ return rowHtml(k, pinned.length+i+1, false, maxSubs); }).join('');
+    if(hasMore){
+      html += '<tr class="load-more-row"><td colspan="8"><button type="button" id="loadMoreBtn">더 보기 — '+(rest.length-visibleRest.length)+'명 더 있음</button></td></tr>';
+    }
     tbody.innerHTML = html;
-    Array.prototype.forEach.call(tbody.querySelectorAll('.notes-cell'), function(cell){
-      cell.addEventListener('click', function(){ cell.classList.toggle('expanded'); });
-    });
+  }
+
+  function refilter(){
+    state.visibleCount = PAGE_SIZE;
+    renderTable();
   }
 
   function renderSelectionBar(){
@@ -748,6 +763,8 @@
     document.getElementById('refreshBtn').disabled = true;
     fetchSheetJSONP().then(function(data){
       KOLS = parseSheetData(data);
+      maxSubsCache = Math.max.apply(null, KOLS.map(function(k){ return k.subsMax||0; })) || 1;
+      state.visibleCount = PAGE_SIZE;
       renderStats(); renderChips(); renderTable();
       setSyncState('ok', KOLS.length+'명 불러옴 · '+fmtNow()+' 기준');
     }).catch(function(){
@@ -758,31 +775,36 @@
   }
 
   function wireControls(){
-    document.getElementById('searchInput').addEventListener('input', function(e){ state.search = e.target.value; renderTable(); });
-    document.getElementById('sortSelect').addEventListener('change', function(e){ state.sort = e.target.value; renderTable(); });
+    var searchDebounce;
+    document.getElementById('searchInput').addEventListener('input', function(e){
+      var v = e.target.value;
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(function(){ state.search = v; refilter(); }, 180);
+    });
+    document.getElementById('sortSelect').addEventListener('change', function(e){ state.sort = e.target.value; refilter(); });
     document.getElementById('statusChips').addEventListener('click', function(e){
       var btn = e.target.closest('.chip'); if(!btn) return;
       var v = btn.getAttribute('data-status');
       if(v === '전체') state.status = []; else toggleMulti(state.status, v);
-      renderChips(); renderTable();
+      renderChips(); refilter();
     });
     document.getElementById('sourceChips').addEventListener('click', function(e){
       var btn = e.target.closest('.chip'); if(!btn) return;
       var v = btn.getAttribute('data-source');
       if(v === '전체') state.source = []; else toggleMulti(state.source, v);
-      renderChips(); renderTable();
+      renderChips(); refilter();
     });
     document.getElementById('regionChips').addEventListener('click', function(e){
       var btn = e.target.closest('.chip'); if(!btn) return;
       var v = btn.getAttribute('data-region');
       if(v === '전체') state.region = []; else toggleMulti(state.region, v);
-      renderChips(); renderTable();
+      renderChips(); refilter();
     });
     document.getElementById('platformChips').addEventListener('click', function(e){
       var btn = e.target.closest('.chip'); if(!btn) return;
       var v = btn.getAttribute('data-platform');
       if(v === '전체') state.platform = []; else toggleMulti(state.platform, v);
-      renderChips(); renderTable();
+      renderChips(); refilter();
     });
     document.getElementById('refreshBtn').addEventListener('click', load);
     document.getElementById('exportBtn').addEventListener('click', exportCSV);
@@ -790,8 +812,11 @@
       state.selected.clear(); renderTable();
     });
     document.getElementById('tbody').addEventListener('click', function(e){
-      var btn = e.target.closest('.copy-btn'); if(!btn) return;
-      copyText(btn.getAttribute('data-copy'));
+      var copyBtn = e.target.closest('.copy-btn');
+      if(copyBtn){ copyText(copyBtn.getAttribute('data-copy')); return; }
+      if(e.target.closest('#loadMoreBtn')){ state.visibleCount += PAGE_SIZE; renderTable(); return; }
+      var notesCell = e.target.closest('.notes-cell');
+      if(notesCell){ notesCell.classList.toggle('expanded'); }
     });
     document.getElementById('tbody').addEventListener('change', function(e){
       var cb = e.target.closest('.select-toggle'); if(!cb) return;
