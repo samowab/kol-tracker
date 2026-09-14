@@ -177,11 +177,38 @@
   tbody td{ padding:12px 14px; border-bottom:1px solid var(--line); vertical-align:top; }
   tbody tr:hover td{ background:var(--surface-2); }
   tbody tr:last-child td{ border-bottom:none; }
+  tbody tr.pinned-row td{ background:var(--accent-soft); }
+  tbody tr.pinned-row:hover td{ background:var(--accent-soft); filter:brightness(0.97); }
+  tr.section-divider td{
+    padding:7px 14px; font-size:11px; font-weight:700; color:var(--ink-faint); background:var(--surface-2);
+    text-transform:uppercase; letter-spacing:.05em; border-bottom:1px solid var(--line);
+  }
+
+  .select-cell{ display:flex; align-items:center; gap:6px; cursor:pointer; }
+  .select-cell input{ cursor:pointer; width:14px; height:14px; flex:none; accent-color:var(--accent); }
+  .select-cell span{ color:var(--ink-soft); font-family:var(--font-mono); font-size:12px; }
+
+  .selection-bar{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:var(--accent-soft); border:1px solid var(--accent); border-radius:10px;
+    padding:8px 14px; margin-bottom:10px; font-size:12.5px; font-weight:600; color:var(--accent);
+  }
+  .selection-clear{
+    font-family:var(--font-body); font-size:12px; font-weight:700; border:1px solid var(--accent);
+    background:var(--surface); color:var(--accent); border-radius:999px; padding:5px 12px; cursor:pointer;
+  }
+  .selection-clear:hover{ background:var(--accent-soft); }
+
+  .badge-pin{
+    font-size:10.5px; font-weight:700; color:var(--accent-ink); background:var(--accent); border-radius:5px;
+    padding:1px 6px; letter-spacing:.02em; width:fit-content;
+  }
 
   .name-cell{ display:flex; flex-direction:column; gap:3px; min-width:150px; }
   .name-link{ font-weight:700; color:var(--ink); text-decoration:none; display:inline-flex; align-items:center; gap:6px; font-size:14px; }
   .name-link:hover{ color:var(--accent); }
   .name-link svg{ opacity:.45; flex:none; }
+  .badge-row{ display:flex; gap:4px; flex-wrap:wrap; margin-top:3px; }
   .badge-unverified{
     font-size:10.5px; font-weight:700; color:var(--gold); background:var(--gold-soft); border-radius:5px;
     padding:1px 6px; letter-spacing:.02em; width:fit-content;
@@ -295,11 +322,16 @@
     </select>
   </div>
 
+  <div class="selection-bar" id="selectionBar" hidden>
+    <span class="selection-count"></span>
+    <button type="button" class="selection-clear" id="clearSelectionBtn">선택 해제</button>
+  </div>
+
   <div class="tablewrap">
     <table>
       <thead>
         <tr>
-          <th style="width:32px;">#</th>
+          <th style="width:40px;">#</th>
           <th>크리에이터</th>
           <th>장르</th>
           <th>Bilibili 팔로워</th>
@@ -328,7 +360,7 @@
   var STATUS_CLASS = {'미접촉':'st-none','접촉중':'st-sent','회신옴':'st-reply','진행중':'st-confirmed'};
 
   var KOLS = [];
-  var state = { search:'', status:[], channel:[], sort:'followers-desc' };
+  var state = { search:'', status:[], channel:[], sort:'followers-desc', selected:new Set() };
   var callbackCounter = 0;
 
   function toggleMulti(arr, v){
@@ -480,6 +512,10 @@
       }
       return true;
     });
+    return sortList(list);
+  }
+
+  function sortList(list){
     list.sort(function(a,b){
       switch(state.sort){
         case 'followers-asc': return (a.followers||-1) - (b.followers||-1);
@@ -491,43 +527,65 @@
     return list;
   }
 
+  function rowHtml(k, displayIndex, isPinned, maxFollowers){
+    var barPct = k.followers ? Math.max(4, Math.round((k.followers/maxFollowers)*100)) : 0;
+    var unverifiedBadge = !k.linkVerified ? '<span class="badge-unverified">계정 미검증</span>' : '';
+    var pinBadge = isPinned ? '<span class="badge-pin">📌 선택됨</span>' : '';
+    var recheckFlag = (k.followerVerified === false) ? '<div class="recheck">팔로워 재확인 권장</div>' : '';
+    var channelDetail = k.channelDetail ? '<button type="button" class="channel-detail copy-btn" data-copy="'+escapeHtml(k.channelDetail)+'" title="클릭하여 복사">'+escapeHtml(k.channelDetail)+' <span class="copy-ic">⧉</span></button>' : '';
+    var badgeInner = '<span class="dot"></span>'+escapeHtml(k.channelLabel);
+    var badge = (!k.channelDetail && k.messageUrl)
+      ? '<a class="channel-badge link '+channelClass(k.channelType)+'" href="'+k.messageUrl+'" target="_blank" rel="noopener" title="Bilibili 쪽지 창 바로가기">'+badgeInner+'</a>'
+      : '<span class="channel-badge '+channelClass(k.channelType)+'">'+badgeInner+'</span>';
+    return '' +
+    '<tr'+(isPinned?' class="pinned-row"':'')+'>' +
+      '<td><label class="select-cell"><input type="checkbox" class="select-toggle" data-id="'+k.id+'"'+(isPinned?' checked':'')+'><span>'+displayIndex+'</span></label></td>' +
+      '<td><div class="name-cell">' +
+        '<a class="name-link" href="'+k.bilibili+'" target="_blank" rel="noopener">'+escapeHtml(k.name)+
+          '<svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M7 17L17 7M17 7H9M17 7V15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>' +
+        '<div class="badge-row">'+pinBadge+unverifiedBadge+'</div>' +
+      '</div></td>' +
+      '<td><div class="genre-pills"><span class="pill">'+escapeHtml(k.genre)+'</span><span class="pill secondary">'+escapeHtml(k.genre2)+'</span></div></td>' +
+      '<td class="followers-cell">'+fmtFollowers(k.followers)+'<div class="followers-bar"><i style="width:'+barPct+'%"></i></div>'+recheckFlag+'</td>' +
+      '<td class="channel-cell">'+badge+channelDetail+'</td>' +
+      '<td><span class="status-pill '+STATUS_CLASS[k.status]+'">'+escapeHtml(k.status)+'</span></td>' +
+      '<td class="notes-cell"><div class="notes-text">'+escapeHtml(k.notes)+'</div><div class="notes-hint">클릭하여 전체 보기</div></td>' +
+    '</tr>';
+  }
+
   function renderTable(){
-    var list = applyFilters();
+    var filtered = applyFilters();
     var exportCountEl = document.getElementById('exportCount');
-    if(exportCountEl) exportCountEl.textContent = list.length;
+    if(exportCountEl) exportCountEl.textContent = filtered.length;
+    renderSelectionBar();
+
+    var pinned = sortList(KOLS.filter(function(k){ return state.selected.has(k.id); }));
+    var rest = filtered.filter(function(k){ return !state.selected.has(k.id); });
+
     var maxFollowers = Math.max.apply(null, KOLS.map(function(k){ return k.followers||0; })) || 1;
     var tbody = document.getElementById('tbody');
-    if(list.length === 0){
+    if(pinned.length === 0 && rest.length === 0){
       tbody.innerHTML = '<tr class="empty-row"><td colspan="7">조건에 맞는 KOL이 없습니다.</td></tr>';
       return;
     }
-    tbody.innerHTML = list.map(function(k, i){
-      var barPct = k.followers ? Math.max(4, Math.round((k.followers/maxFollowers)*100)) : 0;
-      var unverifiedBadge = !k.linkVerified ? '<span class="badge-unverified">계정 미검증</span>' : '';
-      var recheckFlag = (k.followerVerified === false) ? '<div class="recheck">팔로워 재확인 권장</div>' : '';
-      var channelDetail = k.channelDetail ? '<button type="button" class="channel-detail copy-btn" data-copy="'+escapeHtml(k.channelDetail)+'" title="클릭하여 복사">'+escapeHtml(k.channelDetail)+' <span class="copy-ic">⧉</span></button>' : '';
-      var badgeInner = '<span class="dot"></span>'+escapeHtml(k.channelLabel);
-      var badge = (!k.channelDetail && k.messageUrl)
-        ? '<a class="channel-badge link '+channelClass(k.channelType)+'" href="'+k.messageUrl+'" target="_blank" rel="noopener" title="Bilibili 쪽지 창 바로가기">'+badgeInner+'</a>'
-        : '<span class="channel-badge '+channelClass(k.channelType)+'">'+badgeInner+'</span>';
-      return '' +
-      '<tr>' +
-        '<td>'+(i+1)+'</td>' +
-        '<td><div class="name-cell">' +
-          '<a class="name-link" href="'+k.bilibili+'" target="_blank" rel="noopener">'+escapeHtml(k.name)+
-            '<svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M7 17L17 7M17 7H9M17 7V15" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>' +
-          unverifiedBadge +
-        '</div></td>' +
-        '<td><div class="genre-pills"><span class="pill">'+escapeHtml(k.genre)+'</span><span class="pill secondary">'+escapeHtml(k.genre2)+'</span></div></td>' +
-        '<td class="followers-cell">'+fmtFollowers(k.followers)+'<div class="followers-bar"><i style="width:'+barPct+'%"></i></div>'+recheckFlag+'</td>' +
-        '<td class="channel-cell">'+badge+channelDetail+'</td>' +
-        '<td><span class="status-pill '+STATUS_CLASS[k.status]+'">'+escapeHtml(k.status)+'</span></td>' +
-        '<td class="notes-cell"><div class="notes-text">'+escapeHtml(k.notes)+'</div><div class="notes-hint">클릭하여 전체 보기</div></td>' +
-      '</tr>';
-    }).join('');
+    var html = pinned.map(function(k, i){ return rowHtml(k, i+1, true, maxFollowers); }).join('');
+    if(pinned.length && rest.length){
+      html += '<tr class="section-divider"><td colspan="7">필터 결과 ('+rest.length+'명)</td></tr>';
+    }
+    html += rest.map(function(k, i){ return rowHtml(k, pinned.length+i+1, false, maxFollowers); }).join('');
+    tbody.innerHTML = html;
     Array.prototype.forEach.call(tbody.querySelectorAll('.notes-cell'), function(cell){
       cell.addEventListener('click', function(){ cell.classList.toggle('expanded'); });
     });
+  }
+
+  function renderSelectionBar(){
+    var bar = document.getElementById('selectionBar');
+    if(!bar) return;
+    var n = state.selected.size;
+    if(n === 0){ bar.hidden = true; return; }
+    bar.hidden = false;
+    bar.querySelector('.selection-count').textContent = n + '명 선택됨 (필터와 무관하게 상단 고정)';
   }
 
   function csvField(v){
@@ -636,9 +694,18 @@
     });
     document.getElementById('refreshBtn').addEventListener('click', load);
     document.getElementById('exportBtn').addEventListener('click', exportCSV);
+    document.getElementById('clearSelectionBtn').addEventListener('click', function(){
+      state.selected.clear(); renderTable();
+    });
     document.getElementById('tbody').addEventListener('click', function(e){
       var btn = e.target.closest('.copy-btn'); if(!btn) return;
       copyText(btn.getAttribute('data-copy'));
+    });
+    document.getElementById('tbody').addEventListener('change', function(e){
+      var cb = e.target.closest('.select-toggle'); if(!cb) return;
+      var id = cb.getAttribute('data-id');
+      if(cb.checked) state.selected.add(id); else state.selected.delete(id);
+      renderTable();
     });
   }
 
