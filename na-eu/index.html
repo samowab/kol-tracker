@@ -399,10 +399,10 @@
   }
 
   function regionGroup(region){
-    region = region || '';
+    region = (region || '').trim();
     if(region.indexOf('확인 필요') !== -1 || region.indexOf('미확인') !== -1) return 'unknown';
-    if(region.indexOf('NA') === 0 || region.indexOf('NA ') !== -1) return 'na';
-    if(region.indexOf('EU') === 0 || region.indexOf('EU ') !== -1) return 'eu';
+    if(region.indexOf('NA') === 0) return 'na';
+    if(region.indexOf('EU') === 0) return 'eu';
     return 'other';
   }
 
