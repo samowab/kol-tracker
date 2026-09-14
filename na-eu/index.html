@@ -190,12 +190,37 @@
   tbody td{ padding:12px 14px; border-bottom:1px solid var(--line); vertical-align:top; }
   tbody tr:hover td{ background:var(--surface-2); }
   tbody tr:last-child td{ border-bottom:none; }
+  tbody tr.pinned-row td{ background:var(--accent-soft); }
+  tbody tr.pinned-row:hover td{ background:var(--accent-soft); filter:brightness(0.97); }
+  tr.section-divider td{
+    padding:7px 14px; font-size:11px; font-weight:700; color:var(--ink-faint); background:var(--surface-2);
+    text-transform:uppercase; letter-spacing:.05em; border-bottom:1px solid var(--line);
+  }
+
+  .select-cell{ display:flex; align-items:center; gap:6px; cursor:pointer; }
+  .select-cell input{ cursor:pointer; width:14px; height:14px; flex:none; accent-color:var(--accent); }
+  .select-cell span{ color:var(--ink-soft); font-family:var(--font-mono); font-size:12px; }
+
+  .selection-bar{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:var(--accent-soft); border:1px solid var(--accent); border-radius:10px;
+    padding:8px 14px; margin-bottom:10px; font-size:12.5px; font-weight:600; color:var(--accent);
+  }
+  .selection-clear{
+    font-family:var(--font-body); font-size:12px; font-weight:700; border:1px solid var(--accent);
+    background:var(--surface); color:var(--accent); border-radius:999px; padding:5px 12px; cursor:pointer;
+  }
+  .selection-clear:hover{ background:var(--accent-soft); }
 
   .name-cell{ display:flex; flex-direction:column; gap:3px; min-width:150px; }
   .name-main{ font-weight:700; color:var(--ink); font-size:14px; }
   .name-real{ font-size:11px; color:var(--ink-faint); }
   .name-region{ font-size:10.5px; color:var(--ink-soft); font-family:var(--font-mono); margin-top:1px; }
   .badge-row{ display:flex; gap:4px; flex-wrap:wrap; margin-top:3px; }
+  .badge-pin{
+    font-size:10px; font-weight:700; color:var(--accent-ink); background:var(--accent); border-radius:5px;
+    padding:1px 6px; letter-spacing:.02em; width:fit-content;
+  }
   .badge-vip{
     font-size:10px; font-weight:700; color:var(--gold); background:var(--gold-soft); border-radius:5px;
     padding:1px 6px; letter-spacing:.02em; width:fit-content;
@@ -327,11 +352,16 @@
     </div>
   </div>
 
+  <div class="selection-bar" id="selectionBar" hidden>
+    <span class="selection-count"></span>
+    <button type="button" class="selection-clear" id="clearSelectionBtn">선택 해제</button>
+  </div>
+
   <div class="tablewrap">
     <table>
       <thead>
         <tr>
-          <th style="width:32px;">#</th>
+          <th style="width:40px;">#</th>
           <th>크리에이터</th>
           <th>장르</th>
           <th>플랫폼</th>
@@ -361,7 +391,7 @@
   var STATUS_CLASS = {'미접촉':'st-none','접촉중':'st-sent','회신옴':'st-reply','진행중':'st-confirmed'};
 
   var KOLS = [];
-  var state = { search:'', status:[], region:[], platform:[], source:[], sort:'followers-desc' };
+  var state = { search:'', status:[], region:[], platform:[], source:[], sort:'followers-desc', selected:new Set() };
   var callbackCounter = 0;
 
   function toggleMulti(arr, v){
@@ -546,6 +576,10 @@
       }
       return true;
     });
+    return sortList(list);
+  }
+
+  function sortList(list){
     list.sort(function(a,b){
       switch(state.sort){
         case 'followers-asc': return (a.subsMax||-1) - (b.subsMax||-1);
@@ -562,51 +596,73 @@
     return '<a class="plink '+cls+'" href="'+escapeHtml(url)+'" target="_blank" rel="noopener" title="'+label+'">'+label+'</a>';
   }
 
+  function rowHtml(k, displayIndex, isPinned, maxSubs){
+    var barPct = k.subsMax ? Math.max(4, Math.round((k.subsMax/maxSubs)*100)) : 0;
+    var badges = '';
+    if(isPinned) badges += '<span class="badge-pin">📌 선택됨</span>';
+    if(k.isVip) badges += '<span class="badge-vip">VIP 리스트</span>';
+    if(k.isWeak) badges += '<span class="badge-weak">장르fit 약함</span>';
+    var realRow = k.real ? '<div class="name-real">'+escapeHtml(k.real)+'</div>' : '';
+    var platforms = platformLink('yt','YT',k.yt) + platformLink('tw','TW',k.tw) + platformLink('xx','X',k.xx);
+    var emailCell = k.emailValid ? '<button type="button" class="contact-email copy-btn" data-copy="'+escapeHtml(k.email)+'" title="클릭하여 복사">'+escapeHtml(k.email)+' <span class="copy-ic">⧉</span></button>' : '<span class="na">'+escapeHtml(k.email||'미확인')+'</span>';
+    var channelLine = k.contactChannel ? '<div class="contact-channel">'+escapeHtml(k.contactChannel)+'</div>' : '';
+    var discordLine = '';
+    if(k.discord && /^https?:\/\//i.test(k.discord)){
+      discordLine = '<a class="contact-discord" href="'+escapeHtml(k.discord)+'" target="_blank" rel="noopener">Discord ↗</a>';
+    } else if(k.discord){
+      discordLine = '<div class="contact-channel">'+escapeHtml(k.discord)+'</div>';
+    }
+    return '' +
+    '<tr'+(isPinned?' class="pinned-row"':'')+'>' +
+      '<td><label class="select-cell"><input type="checkbox" class="select-toggle" data-id="'+k.id+'"'+(isPinned?' checked':'')+'><span>'+displayIndex+'</span></label></td>' +
+      '<td><div class="name-cell">' +
+        '<div class="name-main">'+escapeHtml(k.name)+'</div>' +
+        realRow +
+        '<div class="name-region">'+escapeHtml(k.region)+'</div>' +
+        '<div class="badge-row">'+badges+'</div>' +
+      '</div></td>' +
+      '<td><div class="genre-pills"><span class="pill">'+escapeHtml(k.pgenre)+'</span>'+(k.sgenre?'<span class="pill secondary">'+escapeHtml(k.sgenre)+'</span>':'')+'</div></td>' +
+      '<td class="platform-cell"><div class="platform-links">'+platforms+'</div></td>' +
+      '<td class="followers-cell">'+fmtFollowers(k)+'<div class="followers-bar"><i style="width:'+barPct+'%"></i></div></td>' +
+      '<td class="contact-cell">'+emailCell+channelLine+discordLine+'</td>' +
+      '<td><span class="status-pill '+STATUS_CLASS[k.status]+'">'+escapeHtml(k.status)+'</span></td>' +
+      '<td class="notes-cell"><div class="notes-text">'+escapeHtml(k.notes)+'</div><div class="notes-hint">클릭하여 전체 보기</div></td>' +
+    '</tr>';
+  }
+
   function renderTable(){
-    var list = applyFilters();
+    var filtered = applyFilters();
     var exportCountEl = document.getElementById('exportCount');
-    if(exportCountEl) exportCountEl.textContent = list.length;
+    if(exportCountEl) exportCountEl.textContent = filtered.length;
+    renderSelectionBar();
+
+    var pinned = sortList(KOLS.filter(function(k){ return state.selected.has(k.id); }));
+    var rest = filtered.filter(function(k){ return !state.selected.has(k.id); });
+
     var maxSubs = Math.max.apply(null, KOLS.map(function(k){ return k.subsMax||0; })) || 1;
     var tbody = document.getElementById('tbody');
-    if(list.length === 0){
+    if(pinned.length === 0 && rest.length === 0){
       tbody.innerHTML = '<tr class="empty-row"><td colspan="8">조건에 맞는 크리에이터가 없습니다.</td></tr>';
       return;
     }
-    tbody.innerHTML = list.map(function(k, i){
-      var barPct = k.subsMax ? Math.max(4, Math.round((k.subsMax/maxSubs)*100)) : 0;
-      var badges = '';
-      if(k.isVip) badges += '<span class="badge-vip">VIP 리스트</span>';
-      if(k.isWeak) badges += '<span class="badge-weak">장르fit 약함</span>';
-      var realRow = k.real ? '<div class="name-real">'+escapeHtml(k.real)+'</div>' : '';
-      var platforms = platformLink('yt','YT',k.yt) + platformLink('tw','TW',k.tw) + platformLink('xx','X',k.xx);
-      var emailCell = k.emailValid ? '<button type="button" class="contact-email copy-btn" data-copy="'+escapeHtml(k.email)+'" title="클릭하여 복사">'+escapeHtml(k.email)+' <span class="copy-ic">⧉</span></button>' : '<span class="na">'+escapeHtml(k.email||'미확인')+'</span>';
-      var channelLine = k.contactChannel ? '<div class="contact-channel">'+escapeHtml(k.contactChannel)+'</div>' : '';
-      var discordLine = '';
-      if(k.discord && /^https?:\/\//i.test(k.discord)){
-        discordLine = '<a class="contact-discord" href="'+escapeHtml(k.discord)+'" target="_blank" rel="noopener">Discord ↗</a>';
-      } else if(k.discord){
-        discordLine = '<div class="contact-channel">'+escapeHtml(k.discord)+'</div>';
-      }
-      return '' +
-      '<tr>' +
-        '<td>'+(i+1)+'</td>' +
-        '<td><div class="name-cell">' +
-          '<div class="name-main">'+escapeHtml(k.name)+'</div>' +
-          realRow +
-          '<div class="name-region">'+escapeHtml(k.region)+'</div>' +
-          '<div class="badge-row">'+badges+'</div>' +
-        '</div></td>' +
-        '<td><div class="genre-pills"><span class="pill">'+escapeHtml(k.pgenre)+'</span>'+(k.sgenre?'<span class="pill secondary">'+escapeHtml(k.sgenre)+'</span>':'')+'</div></td>' +
-        '<td class="platform-cell"><div class="platform-links">'+platforms+'</div></td>' +
-        '<td class="followers-cell">'+fmtFollowers(k)+'<div class="followers-bar"><i style="width:'+barPct+'%"></i></div></td>' +
-        '<td class="contact-cell">'+emailCell+channelLine+discordLine+'</td>' +
-        '<td><span class="status-pill '+STATUS_CLASS[k.status]+'">'+escapeHtml(k.status)+'</span></td>' +
-        '<td class="notes-cell"><div class="notes-text">'+escapeHtml(k.notes)+'</div><div class="notes-hint">클릭하여 전체 보기</div></td>' +
-      '</tr>';
-    }).join('');
+    var html = pinned.map(function(k, i){ return rowHtml(k, i+1, true, maxSubs); }).join('');
+    if(pinned.length && rest.length){
+      html += '<tr class="section-divider"><td colspan="8">필터 결과 ('+rest.length+'명)</td></tr>';
+    }
+    html += rest.map(function(k, i){ return rowHtml(k, pinned.length+i+1, false, maxSubs); }).join('');
+    tbody.innerHTML = html;
     Array.prototype.forEach.call(tbody.querySelectorAll('.notes-cell'), function(cell){
       cell.addEventListener('click', function(){ cell.classList.toggle('expanded'); });
     });
+  }
+
+  function renderSelectionBar(){
+    var bar = document.getElementById('selectionBar');
+    if(!bar) return;
+    var n = state.selected.size;
+    if(n === 0){ bar.hidden = true; return; }
+    bar.hidden = false;
+    bar.querySelector('.selection-count').textContent = n + '명 선택됨 (필터와 무관하게 상단 고정)';
   }
 
   function csvField(v){
@@ -730,9 +786,18 @@
     });
     document.getElementById('refreshBtn').addEventListener('click', load);
     document.getElementById('exportBtn').addEventListener('click', exportCSV);
+    document.getElementById('clearSelectionBtn').addEventListener('click', function(){
+      state.selected.clear(); renderTable();
+    });
     document.getElementById('tbody').addEventListener('click', function(e){
       var btn = e.target.closest('.copy-btn'); if(!btn) return;
       copyText(btn.getAttribute('data-copy'));
+    });
+    document.getElementById('tbody').addEventListener('change', function(e){
+      var cb = e.target.closest('.select-toggle'); if(!cb) return;
+      var id = cb.getAttribute('data-id');
+      if(cb.checked) state.selected.add(id); else state.selected.delete(id);
+      renderTable();
     });
   }
 
