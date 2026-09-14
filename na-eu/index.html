@@ -370,7 +370,7 @@
         resolve(data);
       };
       var script = document.createElement('script');
-      script.src = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?gid=' + GID + '&tqx=out:json;responseHandler:' + cbName;
+      script.src = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?gid=' + GID + '&headers=1&tqx=out:json;responseHandler:' + cbName;
       script.onerror = function(){ cleanup(); reject(new Error('script load failed')); };
       document.body.appendChild(script);
     });
