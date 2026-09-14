@@ -328,8 +328,14 @@
   var STATUS_CLASS = {'미접촉':'st-none','접촉중':'st-sent','회신옴':'st-reply','진행중':'st-confirmed'};
 
   var KOLS = [];
-  var state = { search:'', status:'전체', channel:'전체', sort:'followers-desc' };
+  var state = { search:'', status:[], channel:[], sort:'followers-desc' };
   var callbackCounter = 0;
+
+  function toggleMulti(arr, v){
+    var idx = arr.indexOf(v);
+    if(idx === -1) arr.push(v); else arr.splice(idx,1);
+    return arr;
+  }
 
   function fetchSheetJSONP(){
     return new Promise(function(resolve, reject){
@@ -444,20 +450,30 @@
 
   function renderChips(){
     document.getElementById('statusChips').innerHTML = ['전체'].concat(STATUS_OPTS).map(function(s){
-      return '<button class="chip'+(state.status===s?' active':'')+'" data-status="'+s+'">'+s+'</button>';
+      var active = s==='전체' ? state.status.length===0 : state.status.indexOf(s)!==-1;
+      return '<button class="chip'+(active?' active':'')+'" data-status="'+s+'">'+s+'</button>';
     }).join('');
     var channelOpts = [{v:'전체', l:'전체 채널'},{v:'alt', l:'대체 채널 보유'},{v:'bilibili', l:'Bilibili DM만'}];
     document.getElementById('channelChips').innerHTML = channelOpts.map(function(c){
-      return '<button class="chip'+(state.channel===c.v?' active':'')+'" data-channel="'+c.v+'">'+c.l+'</button>';
+      var active = c.v==='전체' ? state.channel.length===0 : state.channel.indexOf(c.v)!==-1;
+      return '<button class="chip'+(active?' active':'')+'" data-channel="'+c.v+'">'+c.l+'</button>';
     }).join('');
+  }
+
+  function matchesChannel(k, v){
+    if(v === 'alt') return k.channelType !== 'bilibili';
+    if(v === 'bilibili') return k.channelType === 'bilibili';
+    return true;
   }
 
   function applyFilters(){
     var q = state.search.trim().toLowerCase();
     var list = KOLS.filter(function(k){
-      if(state.status !== '전체' && k.status !== state.status) return false;
-      if(state.channel === 'alt' && k.channelType === 'bilibili') return false;
-      if(state.channel === 'bilibili' && k.channelType !== 'bilibili') return false;
+      if(state.status.length && state.status.indexOf(k.status)===-1) return false;
+      if(state.channel.length){
+        var chOk = state.channel.some(function(c){ return matchesChannel(k, c); });
+        if(!chOk) return false;
+      }
       if(q){
         var hay = (k.name+' '+k.genre+' '+k.genre2+' '+k.notes).toLowerCase();
         if(hay.indexOf(q) === -1) return false;
@@ -536,8 +552,8 @@
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     var parts = ['bilibili-kol'];
-    if(state.status !== '전체') parts.push(state.status);
-    if(state.channel !== '전체') parts.push(state.channel);
+    if(state.status.length) parts.push(state.status.join('+'));
+    if(state.channel.length) parts.push(state.channel.join('+'));
     var stamp = new Date();
     var pad = function(n){ return String(n).padStart(2,'0'); };
     parts.push(stamp.getFullYear()+pad(stamp.getMonth()+1)+pad(stamp.getDate())+'-'+pad(stamp.getHours())+pad(stamp.getMinutes()));
@@ -608,11 +624,15 @@
     document.getElementById('sortSelect').addEventListener('change', function(e){ state.sort = e.target.value; renderTable(); });
     document.getElementById('statusChips').addEventListener('click', function(e){
       var btn = e.target.closest('.chip'); if(!btn) return;
-      state.status = btn.getAttribute('data-status'); renderChips(); renderTable();
+      var v = btn.getAttribute('data-status');
+      if(v === '전체') state.status = []; else toggleMulti(state.status, v);
+      renderChips(); renderTable();
     });
     document.getElementById('channelChips').addEventListener('click', function(e){
       var btn = e.target.closest('.chip'); if(!btn) return;
-      state.channel = btn.getAttribute('data-channel'); renderChips(); renderTable();
+      var v = btn.getAttribute('data-channel');
+      if(v === '전체') state.channel = []; else toggleMulti(state.channel, v);
+      renderChips(); renderTable();
     });
     document.getElementById('refreshBtn').addEventListener('click', load);
     document.getElementById('exportBtn').addEventListener('click', exportCSV);
